@@ -57,6 +57,19 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+        gold: {
+          DEFAULT: "hsl(var(--gold))",
+          foreground: "hsl(var(--gold-foreground))",
+          soft: "hsl(var(--gold-soft))",
+        },
+        success: {
+          DEFAULT: "hsl(var(--success))",
+          foreground: "hsl(var(--success-foreground))",
+        },
+      },
+      fontFamily: {
+        sans: ['Tajawal', 'system-ui', 'sans-serif'],
+        display: ['Cairo', 'Tajawal', 'sans-serif'],
       },
       borderRadius: {
         lg: "var(--radius)",
