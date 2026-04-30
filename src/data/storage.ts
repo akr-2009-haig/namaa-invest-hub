@@ -46,18 +46,40 @@ async function readRemote<T>(entity: EntityName): Promise<T | null> {
   }
 }
 
-async function writeRemote<T>(entity: EntityName, data: T): Promise<boolean> {
+export interface RemoteWriteResult {
+  ok: boolean;
+  status: number;
+  message: string;
+}
+
+async function writeRemote<T>(entity: EntityName, data: T): Promise<RemoteWriteResult> {
   const proxy = getProxyUrl();
-  if (!proxy) return false;
+  if (!proxy) {
+    return { ok: false, status: 0, message: "Proxy URL is not configured" };
+  }
   try {
     const res = await fetch(`${proxy.replace(/\/$/, "")}/api/data?entity=${entity}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ data }),
     });
-    return res.ok;
-  } catch {
-    return false;
+    if (!res.ok) {
+      let message = `HTTP ${res.status}`;
+      try {
+        const payload = await res.json();
+        message = payload?.error || payload?.message || message;
+      } catch {
+        // ignore parse errors and keep HTTP status fallback
+      }
+      return { ok: false, status: res.status, message };
+    }
+    return { ok: true, status: res.status, message: "OK" };
+  } catch (error) {
+    return {
+      ok: false,
+      status: 0,
+      message: error instanceof Error ? error.message : "Network error",
+    };
   }
 }
 
@@ -87,8 +109,16 @@ export const storage = {
     return readLocal<UserRecord[]>("users", []);
   },
   async saveUsers(users: UserRecord[]): Promise<void> {
+    if (getProxyUrl()) {
+      const result = await writeRemote("users", users);
+      if (!result.ok) {
+        console.error("[storage.saveUsers] Proxy write failed", result);
+        throw new Error(`فشل حفظ users عبر Proxy: ${result.message} (status: ${result.status})`);
+      }
+      writeLocal("users", users);
+      return;
+    }
     writeLocal("users", users);
-    await writeRemote("users", users);
   },
 
   // المحافظ
@@ -101,8 +131,16 @@ export const storage = {
     return readLocal<WalletRecord[]>("wallets", []);
   },
   async saveWallets(wallets: WalletRecord[]): Promise<void> {
+    if (getProxyUrl()) {
+      const result = await writeRemote("wallets", wallets);
+      if (!result.ok) {
+        console.error("[storage.saveWallets] Proxy write failed", result);
+        throw new Error(`فشل حفظ wallets عبر Proxy: ${result.message} (status: ${result.status})`);
+      }
+      writeLocal("wallets", wallets);
+      return;
+    }
     writeLocal("wallets", wallets);
-    await writeRemote("wallets", wallets);
   },
 
   // المحتوى
@@ -115,8 +153,16 @@ export const storage = {
     return readLocal<SiteContent>("content", DEFAULT_SITE_CONTENT);
   },
   async saveContent(content: SiteContent): Promise<void> {
+    if (getProxyUrl()) {
+      const result = await writeRemote("content", content);
+      if (!result.ok) {
+        console.error("[storage.saveContent] Proxy write failed", result);
+        throw new Error(`فشل حفظ content عبر Proxy: ${result.message} (status: ${result.status})`);
+      }
+      writeLocal("content", content);
+      return;
+    }
     writeLocal("content", content);
-    await writeRemote("content", content);
   },
 
   // الإعدادات (محلية فقط لأنها تحوي رابط الـ proxy)

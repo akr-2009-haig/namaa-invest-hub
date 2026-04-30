@@ -12,6 +12,20 @@ export interface AuthState {
   loading: boolean;
 }
 
+function getProxyUrlFromConfig(): string | null {
+  const proxy = storage.getConfig().proxy_url?.trim();
+  return proxy || null;
+}
+
+async function getUsersFromProxy(proxy: string): Promise<UserRecord[]> {
+  const res = await fetch(`${proxy.replace(/\/$/, "")}/api/data?entity=users`, { method: "GET" });
+  if (!res.ok) {
+    throw new Error(`فشل قراءة المستخدمين من Proxy (status: ${res.status})`);
+  }
+  const payload = await res.json();
+  return Array.isArray(payload?.data) ? (payload.data as UserRecord[]) : [];
+}
+
 // تأكد من وجود الآدمن الرئيسي عند الإقلاع
 async function ensureRootAdmin(): Promise<void> {
   const users = await storage.getUsers();
@@ -81,7 +95,18 @@ export function useAuth(): AuthState & {
   const login = useCallback(async (email: string, password: string) => {
     await boot();
     const hash = await hashPassword(password);
-    const users = await storage.getUsers();
+    const proxy = getProxyUrlFromConfig();
+    let users: UserRecord[];
+    if (proxy) {
+      try {
+        users = await getUsersFromProxy(proxy);
+      } catch (error) {
+        console.error("[auth.login] Proxy read failed, fallback to localStorage", error);
+        users = await storage.getUsers();
+      }
+    } else {
+      users = await storage.getUsers();
+    }
     const found = users.find(
       (u) => u.email.toLowerCase() === email.trim().toLowerCase() && u.password_hash === hash
     );
@@ -113,7 +138,12 @@ export function useAuth(): AuthState & {
       is_root_admin: false,
       admin_permissions: data.admin_permissions,
     };
-    await storage.saveUsers([...users, newUser]);
+    try {
+      await storage.saveUsers([...users, newUser]);
+    } catch (error) {
+      console.error("[auth.register] saveUsers failed", error);
+      throw new Error("فشل حفظ الحساب في الخادم. تحقق من إعدادات الـ Proxy.");
+    }
     sessionStorage.setItem(SESSION_KEY, newUser.id);
     setUser(newUser);
     return newUser;
