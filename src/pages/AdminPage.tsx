@@ -589,8 +589,51 @@ function WalletEditor({ user, wallets, onClose, onSaved }: { user: UserRecord; w
 /* ---------- Settings (Proxy) ---------- */
 function SettingsSection() {
   const [url, setUrl] = useState(storage.getConfig().proxy_url || "");
+  const [testing, setTesting] = useState(false);
+
+  const testConnection = async () => {
+    const proxy = url.trim();
+    if (!proxy) {
+      toast.error("أدخل رابط Proxy أولاً");
+      return;
+    }
+    setTesting(true);
+    try {
+      const readRes = await fetch(`${proxy.replace(/\/$/, "")}/api/data?entity=users`, { method: "GET" });
+      const readPayload = await readRes.json().catch(() => ({}));
+      if (!readRes.ok) {
+        throw new Error(readPayload?.error || `GET failed (status: ${readRes.status})`);
+      }
+
+      const users = Array.isArray(readPayload?.data) ? readPayload.data : [];
+      const writeRes = await fetch(`${proxy.replace(/\/$/, "")}/api/data?entity=users`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ data: users }),
+      });
+      const writePayload = await writeRes.json().catch(() => ({}));
+      if (!writeRes.ok) {
+        throw new Error(writePayload?.error || `PUT failed (status: ${writeRes.status})`);
+      }
+
+      toast.success("الاتصال ناجح والكتابة إلى GitHub تعمل");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "فشل اختبار الاتصال";
+      toast.error(message);
+    } finally {
+      setTesting(false);
+    }
+  };
+
   return (
     <Section title="إعدادات الـ Backend (GitHub via Vercel Proxy)" desc="اختياري. اتركه فارغاً للتخزين المحلي فقط">
+      <div className="rounded-xl border border-border bg-background p-3 text-sm">
+        {storage.isUsingProxy() ? (
+          <span className="font-bold text-success">التخزين السحابي مفعّل</span>
+        ) : (
+          <span className="text-muted-foreground">التخزين المحلي فقط</span>
+        )}
+      </div>
       <div className="rounded-xl border border-gold/40 bg-gold/5 p-4 text-sm text-foreground">
         <strong className="block">كيف يعمل؟</strong>
         <ol className="mt-2 list-decimal space-y-1 pr-4 text-xs text-muted-foreground">
@@ -606,6 +649,11 @@ function SettingsSection() {
       <div className="flex gap-2">
         <button onClick={() => { storage.saveConfig({ proxy_url: url.trim() || undefined }); toast.success("تم الحفظ، سيتم استخدام Proxy للقراءة والكتابة"); }}
           className="flex-1 rounded-xl bg-gradient-gold py-3 font-bold text-gold-foreground shadow-gold">حفظ</button>
+        <button onClick={testConnection} disabled={testing}
+          className="inline-flex items-center gap-2 rounded-xl border border-border px-4 py-3 text-sm disabled:opacity-50">
+          {testing && <Loader2 className="h-4 w-4 animate-spin" />}
+          اختبار الاتصال
+        </button>
         <button onClick={() => { storage.saveConfig({}); setUrl(""); toast.info("تم التعطيل، التخزين محلي فقط"); }}
           className="rounded-xl border border-border px-4 py-3 text-sm">تعطيل</button>
       </div>
