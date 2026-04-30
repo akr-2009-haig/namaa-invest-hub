@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Eye, EyeOff, Loader2, X } from "lucide-react";
-import { CountryPicker } from "./CountryPicker";
-import { COUNTRIES, type Country } from "@/data/countries";
+import { CountryPicker } from "@/components/CountryPicker";
+import { type Country } from "@/data/countries";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { z } from "zod";
