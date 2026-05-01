@@ -1,6 +1,6 @@
 import { useContent } from "@/hooks/useContent";
 import { PageHeader } from "./AboutPage";
-import { Mail, Phone, MapPin, Send } from "lucide-react";
+import { Mail, Phone, MapPin, Send, type LucideIcon } from "lucide-react";
 
 export function ContactPage() {
   const { content } = useContent();

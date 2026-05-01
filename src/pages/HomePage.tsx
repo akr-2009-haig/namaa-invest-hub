@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { ArrowLeft, ShieldCheck, TrendingUp, Sparkles } from "lucide-react";
+import { ArrowLeft, ShieldCheck, TrendingUp, Sparkles, type LucideIcon } from "lucide-react";
 import { useContent } from "@/hooks/useContent";
 import tower from "@/assets/namaa-tower.jpg";
 
@@ -76,7 +76,7 @@ export function HomePage() {
   );
 }
 
-function QuickCard({ to, icon: Icon, title, desc }: { to: string; icon: any; title: string; desc: string }) {
+function QuickCard({ to, icon: Icon, title, desc }: { to: string; icon: LucideIcon; title: string; desc: string }) {
   return (
     <Link to={to} className="group rounded-2xl border border-border bg-card p-6 shadow-card transition-all hover:-translate-y-1 hover:shadow-elegant">
       <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-gold text-gold-foreground shadow-gold">
