@@ -39,7 +39,7 @@ export function ContactPage() {
   );
 }
 
-function ContactCard({ icon: Icon, label, value, href }: { icon: any; label: string; value: string; href?: string }) {
+function ContactCard({ icon: Icon, label, value, href }: { icon: LucideIcon; label: string; value: string; href?: string }) {
   const Body = (
     <div className="rounded-2xl border border-border bg-card p-5 text-center shadow-card transition-all hover:-translate-y-1 hover:shadow-elegant">
       <div className="mx-auto mb-3 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-gold text-gold-foreground shadow-gold">
