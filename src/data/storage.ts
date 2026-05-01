@@ -1,4 +1,4 @@
-// طبقة تخزين موحّدة: localStorage محلياً، أو GitHub via Vercel Proxy عندما يُضبط الرابط.
+// طبقة تخزين موحّدة: localStorage محلياً، أو GitHub via Vercel Proxy مباشرة.
 // كل "ملف" هو كيان JSON مستقل (users.json, wallets.json, content.json, config.json).
 
 import { DEFAULT_SITE_CONTENT } from "./defaultContent";
@@ -22,25 +22,28 @@ function lsKey(entity: EntityName): string {
   }
 }
 
+// ✅ الحل النهائي: ربط مباشر للـ Proxy
 function getProxyUrl(): string | null {
-  try {
-    const cfg = JSON.parse(localStorage.getItem(KEYS.CONFIG) || "{}") as SiteConfig;
-    return cfg.proxy_url?.trim() || null;
-  } catch {
-    return null;
-  }
+  return "https://namaa-invest-hub-ufr2.vercel.app";
 }
 
+// =======================
+// Remote (GitHub عبر Proxy)
+// =======================
 async function readRemote<T>(entity: EntityName): Promise<T | null> {
   const proxy = getProxyUrl();
   if (!proxy) return null;
+
   try {
-    const res = await fetch(`${proxy.replace(/\/$/, "")}/api/data?entity=${entity}`, {
+    const res = await fetch(`${proxy}/api/data?entity=${entity}`, {
       method: "GET",
     });
+
     if (!res.ok) return null;
+
     const json = await res.json();
     return json.data as T;
+
   } catch {
     return null;
   }
@@ -54,26 +57,29 @@ export interface RemoteWriteResult {
 
 async function writeRemote<T>(entity: EntityName, data: T): Promise<RemoteWriteResult> {
   const proxy = getProxyUrl();
+
   if (!proxy) {
     return { ok: false, status: 0, message: "Proxy URL is not configured" };
   }
+
   try {
-    const res = await fetch(`${proxy.replace(/\/$/, "")}/api/data?entity=${entity}`, {
+    const res = await fetch(`${proxy}/api/data?entity=${entity}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ data }),
     });
+
     if (!res.ok) {
       let message = `HTTP ${res.status}`;
       try {
         const payload = await res.json();
         message = payload?.error || payload?.message || message;
-      } catch {
-        // ignore parse errors and keep HTTP status fallback
-      }
+      } catch {}
       return { ok: false, status: res.status, message };
     }
+
     return { ok: true, status: res.status, message: "OK" };
+
   } catch (error) {
     return {
       ok: false,
@@ -83,6 +89,9 @@ async function writeRemote<T>(entity: EntityName, data: T): Promise<RemoteWriteR
   }
 }
 
+// =======================
+// Local Storage
+// =======================
 function readLocal<T>(entity: EntityName, fallback: T): T {
   try {
     const raw = localStorage.getItem(lsKey(entity));
@@ -97,7 +106,9 @@ function writeLocal<T>(entity: EntityName, data: T): void {
   localStorage.setItem(lsKey(entity), JSON.stringify(data));
 }
 
-// واجهة عامة
+// =======================
+// API
+// =======================
 export const storage = {
   // المستخدمون
   async getUsers(): Promise<UserRecord[]> {
@@ -108,15 +119,12 @@ export const storage = {
     }
     return readLocal<UserRecord[]>("users", []);
   },
+
   async saveUsers(users: UserRecord[]): Promise<void> {
-    if (getProxyUrl()) {
-      const result = await writeRemote("users", users);
-      if (!result.ok) {
-        console.error("[storage.saveUsers] Proxy write failed", result);
-        throw new Error(`فشل حفظ users عبر Proxy: ${result.message} (status: ${result.status})`);
-      }
-      writeLocal("users", users);
-      return;
+    const result = await writeRemote("users", users);
+    if (!result.ok) {
+      console.error("[storage.saveUsers] Proxy write failed", result);
+      throw new Error(`فشل حفظ users عبر Proxy: ${result.message} (status: ${result.status})`);
     }
     writeLocal("users", users);
   },
@@ -130,15 +138,12 @@ export const storage = {
     }
     return readLocal<WalletRecord[]>("wallets", []);
   },
+
   async saveWallets(wallets: WalletRecord[]): Promise<void> {
-    if (getProxyUrl()) {
-      const result = await writeRemote("wallets", wallets);
-      if (!result.ok) {
-        console.error("[storage.saveWallets] Proxy write failed", result);
-        throw new Error(`فشل حفظ wallets عبر Proxy: ${result.message} (status: ${result.status})`);
-      }
-      writeLocal("wallets", wallets);
-      return;
+    const result = await writeRemote("wallets", wallets);
+    if (!result.ok) {
+      console.error("[storage.saveWallets] Proxy write failed", result);
+      throw new Error(`فشل حفظ wallets عبر Proxy: ${result.message} (status: ${result.status})`);
     }
     writeLocal("wallets", wallets);
   },
@@ -152,36 +157,37 @@ export const storage = {
     }
     return readLocal<SiteContent>("content", DEFAULT_SITE_CONTENT);
   },
+
   async saveContent(content: SiteContent): Promise<void> {
-    if (getProxyUrl()) {
-      const result = await writeRemote("content", content);
-      if (!result.ok) {
-        console.error("[storage.saveContent] Proxy write failed", result);
-        throw new Error(`فشل حفظ content عبر Proxy: ${result.message} (status: ${result.status})`);
-      }
-      writeLocal("content", content);
-      return;
+    const result = await writeRemote("content", content);
+    if (!result.ok) {
+      console.error("[storage.saveContent] Proxy write failed", result);
+      throw new Error(`فشل حفظ content عبر Proxy: ${result.message} (status: ${result.status})`);
     }
     writeLocal("content", content);
   },
 
-  // الإعدادات (محلية فقط لأنها تحوي رابط الـ proxy)
+  // الإعدادات (محلية فقط)
   getConfig(): SiteConfig {
     return readLocal<SiteConfig>("config", {});
   },
+
   saveConfig(config: SiteConfig): void {
     writeLocal("config", config);
   },
 
   isUsingProxy(): boolean {
-    return !!getProxyUrl();
+    return true;
   },
 };
 
-// تشفير كلمة المرور (SHA-256). تنبيه: ليس بديلاً عن bcrypt في الإنتاج.
+// =======================
+// Password Hash
+// =======================
 export async function hashPassword(password: string): Promise<string> {
   const enc = new TextEncoder().encode(password);
   const buf = await crypto.subtle.digest("SHA-256", enc);
+
   return Array.from(new Uint8Array(buf))
     .map((b) => b.toString(16).padStart(2, "0"))
     .join("");
