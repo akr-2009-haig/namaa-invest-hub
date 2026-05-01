@@ -12,6 +12,7 @@ import {
   LayoutDashboard, Users, Home as HomeIcon, Sparkles, TrendingUp, HelpCircle, Phone,
   Link as LinkIcon, Type, Palette, Eye, Wallet as WalletIcon, Plus, Trash2, Save, Loader2,
   Settings as SettingsIcon, Shield,
+  type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -19,7 +20,7 @@ type AdminSection =
   | "overview" | "admins" | "home" | "features" | "plans" | "faq"
   | "contact" | "social" | "site_name" | "colors" | "preview" | "wallets" | "settings";
 
-interface NavItem { id: AdminSection; label: string; icon: any; perm: keyof AdminPermissions | "always"; }
+interface NavItem { id: AdminSection; label: string; icon: LucideIcon; perm: keyof AdminPermissions | "always"; }
 const ADMIN_NAV: NavItem[] = [
   { id: "overview",  label: "نظرة عامة",            icon: LayoutDashboard, perm: "manage_dashboard" },
   { id: "admins",    label: "إدارة الآدمنين",        icon: Users,           perm: "manage_admins" },

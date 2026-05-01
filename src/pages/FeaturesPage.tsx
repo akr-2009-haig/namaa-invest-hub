@@ -1,6 +1,7 @@
 import { useContent } from "@/hooks/useContent";
 import { PageHeader } from "./AboutPage";
 import * as Icons from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 
 export function FeaturesPage() {
   const { content } = useContent();
@@ -10,7 +11,7 @@ export function FeaturesPage() {
       <div className="mx-auto max-w-6xl px-6 py-10">
         <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
           {content.features.map((f, i) => {
-            const Icon = (Icons as any)[f.icon] || Icons.Sparkles;
+            const Icon = ((Icons as unknown as Record<string, LucideIcon>)[f.icon]) || Icons.Sparkles;
             return (
               <div key={i} className="group relative overflow-hidden rounded-2xl border border-border bg-card p-6 shadow-card transition-all hover:-translate-y-1 hover:shadow-elegant">
                 <div className="absolute -top-10 -left-10 h-24 w-24 rounded-full bg-gradient-gold opacity-10 transition-opacity group-hover:opacity-30" />

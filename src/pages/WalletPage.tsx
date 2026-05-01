@@ -4,10 +4,10 @@ import { useAuth } from "@/hooks/useAuth";
 import { storage } from "@/data/storage";
 import type { WalletRecord } from "@/data/types";
 import { PageHeader } from "./AboutPage";
-import { Wallet, Search, Loader2, User, Mail, DollarSign, TrendingUp, Receipt, Hash, Smartphone, Building2, Briefcase, LogIn } from "lucide-react";
+import { Wallet, Search, Loader2, User, Mail, DollarSign, TrendingUp, Receipt, Hash, Smartphone, Building2, Briefcase, LogIn, type LucideIcon } from "lucide-react";
 import { toast } from "sonner";
 
-const FIELD_META: Record<string, { label: string; icon: any }> = {
+const FIELD_META: Record<string, { label: string; icon: LucideIcon }> = {
   name: { label: "الاسم", icon: User },
   email: { label: "البريد الإلكتروني", icon: Mail },
   investment_amount: { label: "مبلغ الاستثمار", icon: DollarSign },
@@ -143,7 +143,7 @@ function WalletCard({ wallet, userName, userEmail }: { wallet: WalletRecord; use
   );
 }
 
-function Row({ icon: Icon, label, value, muted, dir }: { icon: any; label: string; value: string; muted?: boolean; dir?: "ltr" | "rtl" }) {
+function Row({ icon: Icon, label, value, muted, dir }: { icon: LucideIcon; label: string; value: string; muted?: boolean; dir?: "ltr" | "rtl" }) {
   return (
     <div className="flex items-center gap-3 rounded-xl border border-border bg-background p-3">
       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-gold/15 text-gold">
